@@ -53,7 +53,7 @@ def get_jobs() -> List[sqlite3.Row]:
     cursor = conn.cursor()
 
     cursor.execute("""
-        SELECT id, company, title, source, status, date_applied 
+        SELECT id, company, title, source, status, date_applied, notes
         FROM jobs 
         ORDER BY id DESC
     """)

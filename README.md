@@ -2,6 +2,8 @@
 
 A minimal, terminal-native job application tracker built with Python, SQLite and Rich. The purpose is to use it when applying to several jobs and internships, to quickly track everything related to each individual application.
 
+![screenshot](assets/example.png)
+
 ## Quick Start
 
 1. Installation:

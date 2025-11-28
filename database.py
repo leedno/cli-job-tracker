@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import List, Tuple, Optional
 
 # Define the path to your database file
-DB_FILE = Path("tracker.db")
+DB_FILE = Path(__file__).parent / "tracker.db"
 
 
 def create_connection():

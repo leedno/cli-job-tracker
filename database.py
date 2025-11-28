@@ -1,6 +1,6 @@
 import sqlite3
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 # Define the path to your database file
 DB_FILE = Path("tracker.db")
@@ -9,6 +9,7 @@ DB_FILE = Path("tracker.db")
 def create_connection():
     """Create and return a database connection."""
     conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row  # This allows accessing columns by name
     return conn
 
 
@@ -17,7 +18,6 @@ def initialize_db():
     conn = create_connection()
     cursor = conn.cursor()
 
-    # Define the table structure (Your requirements + a primary key ID)
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS jobs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -47,12 +47,11 @@ def add_job(company: str, title: str, source: str, notes: str, date_applied: str
     conn.close()
 
 
-def get_jobs() -> List[Tuple]:
+def get_jobs() -> List[sqlite3.Row]:
     """Fetch all job applications from the database."""
     conn = create_connection()
     cursor = conn.cursor()
 
-    # Selecting the columns needed for the list view
     cursor.execute("""
         SELECT id, company, title, source, status, date_applied 
         FROM jobs 
@@ -64,25 +63,52 @@ def get_jobs() -> List[Tuple]:
     return jobs
 
 
-def update_job_status(job_id: int, new_status: str):
-    """Update the status of a job given its ID."""
+def get_job_by_id(job_id: int) -> Optional[sqlite3.Row]:
+    """Fetch a single job by ID."""
+    conn = create_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM jobs WHERE id = ?", (job_id,))
+    job = cursor.fetchone()
+    conn.close()
+    return job
+
+
+def update_job_status(job_id: int, new_status: str) -> bool:
+    """Update only the status of a job."""
     conn = create_connection()
     cursor = conn.cursor()
 
-    # Check if the job exists
+    # Check existence
     cursor.execute("SELECT id FROM jobs WHERE id=?", (job_id,))
     if cursor.fetchone() is None:
         conn.close()
-        return False  # Job not found
+        return False
 
-    # SQL UPDATE command
+    cursor.execute("UPDATE jobs SET status = ? WHERE id = ?", (new_status, job_id))
+    conn.commit()
+    conn.close()
+    return True
+
+
+def update_job_details(
+    job_id: int, company: str, title: str, source: str, status: str, notes: str
+) -> bool:
+    """Update all details of a job."""
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT id FROM jobs WHERE id=?", (job_id,))
+    if cursor.fetchone() is None:
+        conn.close()
+        return False
+
     cursor.execute(
         """
         UPDATE jobs 
-        SET status = ? 
+        SET company = ?, title = ?, source = ?, status = ?, notes = ?
         WHERE id = ?
     """,
-        (new_status, job_id),
+        (company, title, source, status, notes, job_id),
     )
 
     conn.commit()
@@ -90,7 +116,32 @@ def update_job_status(job_id: int, new_status: str):
     return True
 
 
-# Call the initialization when the script is imported/run
+def delete_job(job_id: int) -> bool:
+    """Delete a job from the database."""
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT id FROM jobs WHERE id=?", (job_id,))
+    if cursor.fetchone() is None:
+        conn.close()
+        return False
+
+    cursor.execute("DELETE FROM jobs WHERE id = ?", (job_id,))
+    conn.commit()
+    conn.close()
+    return True
+
+
+def get_job_counts() -> List[Tuple]:
+    """Get count of jobs grouped by status for statistics."""
+    conn = create_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT status, COUNT(*) FROM jobs GROUP BY status")
+    counts = cursor.fetchall()
+    conn.close()
+    return counts
+
+
 if __name__ == "__main__":
     initialize_db()
-    print(f"Database initialized at {DB_FILE}. Table 'jobs' created.")
+    print(f"Database initialized at {DB_FILE}.")

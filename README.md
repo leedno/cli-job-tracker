@@ -39,6 +39,8 @@ Add this shortcut or something similar to your terminal for easy access. Change 
 
 **Valid Statuses**: Applied, Interview, Offer, Rejected
 
+tip: use `jobs -h` or `jobs --h` to display list of commands
+
 ## File Structure
 - **tracker.py**: Main CLI logic.
 - **database.py**: SQLite operations.

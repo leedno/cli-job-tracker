@@ -33,7 +33,6 @@ def initialize_db():
     conn.close()
 
 
-# Example function to add a job (You will need to use this later)
 def add_job(company: str, title: str, source: str, notes: str, date_applied: str):
     conn = create_connection()
     cursor = conn.cursor()
@@ -46,6 +45,49 @@ def add_job(company: str, title: str, source: str, notes: str, date_applied: str
     )
     conn.commit()
     conn.close()
+
+
+def get_jobs() -> List[Tuple]:
+    """Fetch all job applications from the database."""
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    # Selecting the columns needed for the list view
+    cursor.execute("""
+        SELECT id, company, title, source, status, date_applied 
+        FROM jobs 
+        ORDER BY id DESC
+    """)
+    jobs = cursor.fetchall()
+
+    conn.close()
+    return jobs
+
+
+def update_job_status(job_id: int, new_status: str):
+    """Update the status of a job given its ID."""
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    # Check if the job exists
+    cursor.execute("SELECT id FROM jobs WHERE id=?", (job_id,))
+    if cursor.fetchone() is None:
+        conn.close()
+        return False  # Job not found
+
+    # SQL UPDATE command
+    cursor.execute(
+        """
+        UPDATE jobs 
+        SET status = ? 
+        WHERE id = ?
+    """,
+        (new_status, job_id),
+    )
+
+    conn.commit()
+    conn.close()
+    return True
 
 
 # Call the initialization when the script is imported/run

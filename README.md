@@ -35,6 +35,8 @@ Add this shortcut or something similar to your terminal for easy access. Change 
 | **`update`** | Quick status change by Job ID | `jt stats` |
 | **`edit`** | jobs edit 1 | `jt edit 1` |
 | **`delete`** | Remove an entry by Job ID | `jt delete 1` |
+| **`delete`** | Remove multiple entries by Job ID | `jt delete 1 2 3` |
+| **`delete --all`** | Remove all entries | `jt delete --all` |
 | **`letter`** | Opens new md file to add cover letter | `jt letter 1` |
 
 

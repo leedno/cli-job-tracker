@@ -132,6 +132,34 @@ def delete_job(job_id: int) -> bool:
     return True
 
 
+def delete_jobs_by_ids(job_ids: List[int]) -> int:
+    """Delete multiple jobs from the database by ID."""
+    if not job_ids:
+        return 0
+    conn = create_connection()
+    cursor = conn.cursor()
+    # Create the correct number of placeholders (e.g., ?, ?, ?)
+    placeholders = ",".join("?" * len(job_ids))
+
+    # Execute DELETE command
+    cursor.execute(f"DELETE FROM jobs WHERE id IN ({placeholders})", job_ids)
+    deleted_count = conn.total_changes
+    conn.commit()
+    conn.close()
+    return deleted_count
+
+
+def delete_all_jobs() -> int:
+    """Delete all jobs from the database."""
+    conn = create_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM jobs")
+    deleted_count = conn.total_changes
+    conn.commit()
+    conn.close()
+    return deleted_count
+
+
 def get_job_counts() -> List[Tuple]:
     """Get count of jobs grouped by status for statistics."""
     conn = create_connection()

@@ -9,6 +9,8 @@ from database import (
     get_job_by_id,
     update_job_details,
     get_job_counts,
+    delete_jobs_by_ids,
+    delete_all_jobs,
 )
 import subprocess
 from pathlib import Path
@@ -145,19 +147,64 @@ def handle_update(job_id: int, new_status: str):
         console.print(f"[bold red]Error:[/bold red] Job #{job_id} not found.")
 
 
-def handle_delete(job_id: int):
-    """Handles the 'delete' command."""
-    job = get_job_by_id(job_id)
-    if not job:
-        console.print(f"[bold red]Error:[/bold red] Job #{job_id} not found.")
+def handle_delete(args):
+    """Handles the 'delete' command for one, multiple, or all jobs."""
+
+    if args.all:
+        # Handle DELETE ALL logic (jt delete --all)
+        console.print(
+            "\n[bold red]WARNING:[/bold red] You are about to delete ALL job applications."
+        )
+        if Confirm.ask(
+            "Are you absolutely sure you want to delete everything?", default=False
+        ):
+            deleted_count = delete_all_jobs()
+            console.print(
+                f"\n[bold red]Success![/bold red] {deleted_count} total job(s) deleted."
+            )
+        else:
+            console.print("\n[bold yellow]Operation cancelled.[/bold yellow]")
         return
 
-    console.print(f"Deleting: [bold]{job['company']} - {job['title']}[/bold]")
-    if Confirm.ask("Are you sure?", default=False):
-        delete_job(job_id)
-        console.print(f"[bold red]Deleted[/bold red] Job #{job_id}.")
+    # Handle DELETE BY IDs logic (jt delete 1 2 3)
+    job_ids = args.ids
+
+    if not job_ids:
+        # This occurs if the user runs 'jt delete' with no IDs and no --all flag
+        console.print(
+            "[bold red]Error:[/bold red] Please provide one or more Job IDs, or use --all."
+        )
+        return
+
+    console.print(
+        "\n[bold red]WARNING:[/bold red] You are about to delete the following job(s):"
+    )
+    jobs_to_delete = []
+
+    # Preview and gather valid jobs
+    for job_id in job_ids:
+        job = get_job_by_id(job_id)
+        if job:
+            console.print(
+                f"  - [bold]{job_id}[/bold]: {job['company']} - {job['title']}"
+            )
+            jobs_to_delete.append(job_id)
+        else:
+            console.print(f"  - [bold red]Error:[/bold red] Job #{job_id} not found.")
+
+    if not jobs_to_delete:
+        console.print(
+            "[bold yellow]No valid jobs to delete. Operation cancelled.[/bold yellow]\n"
+        )
+        return
+
+    if Confirm.ask("\nAre you sure you want to delete all listed jobs?", default=False):
+        deleted_count = delete_jobs_by_ids(jobs_to_delete)
+        console.print(
+            f"\n[bold red]Success![/bold red] {deleted_count} job(s) deleted."
+        )
     else:
-        console.print("[bold yellow]Operation cancelled.[/bold yellow]")
+        console.print("\n[bold yellow]Operation cancelled.[/bold yellow]")
 
 
 def handle_edit(job_id: int):
@@ -274,8 +321,17 @@ def main():
     update_parser.add_argument("status", type=str, help="New status")
 
     # DELETE
-    delete_parser = subparsers.add_parser("delete", help="Delete an application")
-    delete_parser.add_argument("id", type=int, help="Job ID")
+    delete_parser = subparsers.add_parser(
+        "delete", help="Delete jobs by ID, or delete all jobs with --all."
+    )
+    # nargs='*' allows 0 or more IDs (used for deleting multiple)
+    delete_parser.add_argument(
+        "ids", type=int, nargs="*", help="One or more Job IDs to delete (e.g., 5 6 7)"
+    )
+    # The --all flag
+    delete_parser.add_argument(
+        "--all", action="store_true", help="Delete ALL job entries."
+    )
 
     # EDIT
     edit_parser = subparsers.add_parser("edit", help="Edit job details")
@@ -299,7 +355,7 @@ def main():
     elif args.command == "update":
         handle_update(args.id, args.status)
     elif args.command == "delete":
-        handle_delete(args.id)
+        handle_delete(args)
     elif args.command == "edit":
         handle_edit(args.id)
     elif args.command == "stats":

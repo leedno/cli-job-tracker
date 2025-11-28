@@ -6,18 +6,22 @@ A minimal, terminal-native job application tracker built with Python, SQLite and
 
 1. Installation:
 
-> `# Create project & venv`
-> `python -m venv venv`
-> `source venv/bin/activate`
->
-> `# Install dependencies`
-> `pip install rich`
+```
+# Set up environment and activate
+python -m venv venv
+source venv/bin/activate
+
+# Install Rich library
+pip install rich
+```
 
 2. Global Alias (makes life easier)
+```
 
-> `alias jobs="(path where you installed it)/venv/bin/python (path again)"`
+alias jobs="~/Code/projects/job_tracker/venv/bin/python ~/Code/projects/job_tracker/tracker.py"
+```
 
-Add this shortcut or something similar to your terminal for easy access.
+Add this shortcut or something similar to your terminal for easy access. Change file paths.
 
 ## Commands
 
@@ -30,6 +34,8 @@ Add this shortcut or something similar to your terminal for easy access.
 | **`edit`** | jobs edit 1 | `jobs edit 1` |
 | **`delete`** | Remove an entry by Job ID | `jobs delete 1` |
 
+
+**Valid Statuses**: Applied, Interview, Offer, Rejected
 
 ## File Structure
 - **tracker.py**: Main CLI logic.

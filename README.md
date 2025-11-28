@@ -20,7 +20,7 @@ pip install rich
 2. Global Alias (makes life easier)
 ```
 
-alias jobs="~/Code/projects/job_tracker/venv/bin/python ~/Code/projects/job_tracker/tracker.py"
+alias jt="~/Code/projects/job_tracker/venv/bin/python ~/Code/projects/job_tracker/tracker.py"
 ```
 
 Add this shortcut or something similar to your terminal for easy access. Change file paths.
@@ -29,17 +29,18 @@ Add this shortcut or something similar to your terminal for easy access. Change 
 
 | Command | Action | Example |
 | :--- | :--- | :--- |
-| **`list`** | View all applications in the TUI table. | `jobs list` |
-| **`add`** | Log a new application | `jobs add` |
-| **`stats`** | View progress dashboard/summary. | `jobs stats` |
-| **`update`** | Quick status change by Job ID | `jobs stats` |
-| **`edit`** | jobs edit 1 | `jobs edit 1` |
-| **`delete`** | Remove an entry by Job ID | `jobs delete 1` |
+| **`list`** | View all applications in the TUI table. | `jt list` |
+| **`add`** | Log a new application | `jt add` |
+| **`stats`** | View progress dashboard/summary. | `jt stats` |
+| **`update`** | Quick status change by Job ID | `jt stats` |
+| **`edit`** | jobs edit 1 | `jt edit 1` |
+| **`delete`** | Remove an entry by Job ID | `jt delete 1` |
+| **`letter`** | Opens new md file to add cover letter | `jt letter 1` |
 
 
 **Valid Statuses**: Applied, Interview, Offer, Rejected
 
-tip: use `jobs -h` or `jobs --h` to display list of commands
+tip: use `jt -h` or `jt --h` to display list of commands
 
 ## File Structure
 - **tracker.py**: Main CLI logic.

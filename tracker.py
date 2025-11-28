@@ -10,6 +10,8 @@ from database import (
     update_job_details,
     get_job_counts,
 )
+import subprocess
+from pathlib import Path
 
 from rich.console import Console
 from rich.table import Table
@@ -18,6 +20,12 @@ from rich.prompt import Confirm
 
 # Initialize database on import
 initialize_db()
+
+# Define the root directory for your cover letters
+# It will be a 'cover_letters' folder right next to your tracker.py file.
+CL_DIR = Path(__file__).parent / "cover_letters"
+# Ensure the directory exists
+CL_DIR.mkdir(exist_ok=True)
 
 console = Console()
 
@@ -54,6 +62,16 @@ def handle_add():
         f"\n[bold green]Success![/bold green] Added application for [bold]{company}[/bold]."
     )
 
+    latest_job = get_jobs()[0]
+    latest_job_id = latest_job["id"]
+
+    # Ask user if they want to create/edit the letter now
+    if Confirm.ask(
+        f"Do you want to create/edit the cover letter file for ID #{latest_job_id} now?",
+        default=True,
+    ):
+        handle_open_letter(latest_job_id)
+
 
 def handle_list():
     """Handles the 'list' command."""
@@ -71,12 +89,29 @@ def handle_list():
     table.add_column("Source", style="blue")
     table.add_column("Status", style="bold", justify="center")
     table.add_column("Date", style="dim")
+    # NEW COLUMN for Cover Letter status
+    table.add_column("CL", style="bold green", justify="center")
     table.add_column("Notes", style="dim white")
 
     for job in jobs:
         # job is now a sqlite3.Row object, access by index or name
         status = job["status"]
         status_colored = f"[{get_status_color(status)}]{status}[/]"
+
+        # --- NEW COVER LETTER CHECK ---
+        # Replicate the filename construction logic from handle_open_letter
+        safe_company = job["company"].replace(" ", "_").replace("/", "-")
+        safe_title = job["title"].replace(" ", "_").replace("/", "-")
+        filename = f"{job['id']}_{safe_company}_{safe_title}.md"
+        file_path = CL_DIR / filename
+
+        # Check if the file exists on the filesystem
+        cl_display = (
+            "[bold green]✓[/bold green]"
+            if file_path.exists()
+            else "[dim red]—[/dim red]"
+        )
+        # --- END NEW CHECK ---
 
         table.add_row(
             str(job["id"]),
@@ -85,6 +120,7 @@ def handle_list():
             job["source"],
             status_colored,
             job["date_applied"],
+            cl_display,  # ADDED to the table row
             job["notes"],
         )
 
@@ -189,6 +225,39 @@ def handle_stats():
     print()
 
 
+def handle_open_letter(job_id: int):
+    """Opens or creates the cover letter file for a job using nvim."""
+    job = get_job_by_id(job_id)
+    if not job:
+        console.print(f"[bold red]Error:[/bold red] Job #{job_id} not found.")
+        return
+
+    # Standardized file name: ID_Company_Title.md
+    # Clean company/title names for filenames (replace spaces, slashes, etc.)
+    safe_company = job["company"].replace(" ", "_").replace("/", "-")
+    safe_title = job["title"].replace(" ", "_").replace("/", "-")
+
+    filename = f"{job_id}_{safe_company}_{safe_title}.md"
+    file_path = CL_DIR / filename
+
+    console.print(
+        f"[bold yellow]Opening letter for:[/bold yellow] [cyan]{job['company']} - {job['title']}[/cyan]..."
+    )
+    console.print(f"[dim]File:[/dim] {file_path}")
+
+    try:
+        # Use subprocess to call nvim (or 'vi', 'nano', whatever text editor you prefer)
+        # We use 'nvim' as requested by the user.
+        subprocess.run(["nvim", str(file_path)], check=True)
+
+    except FileNotFoundError:
+        console.print(
+            f"\n[bold red]Error:[/bold red] 'nvim' command not found. Please ensure it is installed and in your PATH."
+        )
+    except Exception as e:
+        console.print(f"\n[bold red]An unexpected error occurred:[/bold red] {e}")
+
+
 def main():
     parser = argparse.ArgumentParser(description="CLI Job Application Tracker")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -215,6 +284,12 @@ def main():
     # STATS
     subparsers.add_parser("stats", help="Show application statistics")
 
+    # VIEW-LETTER
+    view_letter_parser = subparsers.add_parser(
+        "letter", help="Open the cover letter file with nvim"
+    )
+    view_letter_parser.add_argument("id", type=int, help="Job ID")
+
     args = parser.parse_args()
 
     if args.command == "add":
@@ -229,6 +304,8 @@ def main():
         handle_edit(args.id)
     elif args.command == "stats":
         handle_stats()
+    elif args.command == "letter":
+        handle_open_letter(args.id)
 
 
 if __name__ == "__main__":
